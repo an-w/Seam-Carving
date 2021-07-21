@@ -1,41 +1,28 @@
 export default class Carver {
-    constructor(imageData, width, height) {
+    imageData: ImageData;
+    width: number;
+    height: number;
+    gsMatrix: number[][];
+
+    constructor(imageData: ImageData, width: number, height: number) {
         this.imageData = imageData;
         this.width = width;
         this.height = height;
         this.gsMatrix = this.sobel(this.toGsMatrix(imageData.data, imageData.width));
     }
 
-    // carveHorizontal() {
-    //     let path = this.findHorizontalPath(this.gsMatrix);
-    //     let [newData, highlightData] = this.removeHorizontalPath(this.imageData.data, this.gsMatrix, path);
-    //     let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
-    //     this.imageData = new ImageData(newData, this.imageData.width, this.imageData.height - 1);
-
-    //     return Promise.resolve([this.imageData, highlightImage]);
-    // }
-
-    // carveVertical() {
-    //     let path = this.findVerticalPath(this.gsMatrix);
-    //     let [newData, highlightData] = this.removeVerticalPath(this.imageData.data, this.gsMatrix, path);
-    //     let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
-    //     this.imageData = new ImageData(newData, this.imageData.width - 1, this.imageData.height);
-
-    //     return Promise.resolve([this.imageData, highlightImage]);
-    // }
-
-    carve(vertical = true) {
+    carve(vertical: boolean = true) {
         let path = vertical ? this.findVerticalPath(this.gsMatrix) : this.findHorizontalPath(this.gsMatrix);
         let [newData, highlightData] = vertical
             ? this.removeVerticalPath(this.imageData.data, this.gsMatrix, path)
             : this.removeHorizontalPath(this.imageData.data, this.gsMatrix, path);
         let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
-        this.imageData = new ImageData(newData, this.imageData.width - vertical, this.imageData.height - !vertical);
+        this.imageData = new ImageData(newData, this.imageData.width - +vertical, this.imageData.height - +!vertical);
 
         return Promise.resolve([this.imageData, highlightImage]);
     }
 
-    sobel(matrix) {
+    sobel(matrix: number[][]) {
         let rows = matrix.length;
         let cols = matrix[0].length;
         let result = this.create2DMatrix(rows, cols);
@@ -72,12 +59,12 @@ export default class Carver {
         return result;
     }
 
-    toGsMatrix(imageData, width) {
+    toGsMatrix(imageBuffer: Uint8ClampedArray, width: number) {
         let matrix = [];
-        for (let i = 0; i < imageData.length; i += 4 * width) {
+        for (let i = 0; i < imageBuffer.length; i += 4 * width) {
             let row = [];
             for (let j = 0; j < 4 * width; j += 4) {
-                let pixel = imageData.slice(i + j, i + j + 4);
+                let pixel = imageBuffer.slice(i + j, i + j + 4);
                 row.push((pixel[0] + pixel[1] + pixel[2]) / 3);
             }
             matrix.push(row);
@@ -85,11 +72,11 @@ export default class Carver {
         return matrix;
     }
 
-    toGsBuffer = (matrix) => {
+    toGsBuffer = (matrix: number[][]) => {
         return new Uint8ClampedArray(matrix.map((row) => row.map((val) => [val, val, val, 255])).flat(2));
     };
 
-    findVerticalPath(m) {
+    findVerticalPath(m: number[][]) {
         let cumE = this.copyMatrix(m);
         let h = m.length;
         let w = m[0].length;
@@ -117,7 +104,7 @@ export default class Carver {
         return result;
     }
 
-    findHorizontalPath(m) {
+    findHorizontalPath(m: number[][]) {
         let cumE = this.copyMatrix(m);
         let h = m.length;
         let w = m[0].length;
@@ -146,10 +133,10 @@ export default class Carver {
         return result;
     }
 
-    removeVerticalPath(imageData, m, path) {
-        let newData = new Uint8ClampedArray(imageData.length - path.length * 4);
-        let highlightData = new Uint8ClampedArray(imageData.length);
-        highlightData.set(imageData);
+    removeVerticalPath(imageBuffer: Uint8ClampedArray, m: number[][], path: number[]) {
+        let newData = new Uint8ClampedArray(imageBuffer.length - path.length * 4);
+        let highlightData = new Uint8ClampedArray(imageBuffer.length);
+        highlightData.set(imageBuffer);
         let bufferWidth = m[0].length * 4;
         let newBufferWidth = bufferWidth - 4;
         for (let i = 0; i < path.length; ++i) {
@@ -157,8 +144,8 @@ export default class Carver {
             m[i].splice(path[i], 1);
 
             // copy image buffer
-            let before = imageData.slice(i * bufferWidth, i * bufferWidth + path[i] * 4);
-            let after = imageData.slice(i * bufferWidth + path[i] * 4 + 4, (i + 1) * bufferWidth);
+            let before = imageBuffer.slice(i * bufferWidth, i * bufferWidth + path[i] * 4);
+            let after = imageBuffer.slice(i * bufferWidth + path[i] * 4 + 4, (i + 1) * bufferWidth);
             newData.set(before, i * newBufferWidth);
             newData.set(after, i * newBufferWidth + path[i] * 4);
 
@@ -172,11 +159,11 @@ export default class Carver {
         return [newData, highlightData];
     }
 
-    removeHorizontalPath(imageData, m, path) {
-        let newData = new Uint8ClampedArray(imageData.length - path.length * 4);
-        newData.set(imageData.subarray(0, imageData.length - path.length * 4));
-        let highlightData = new Uint8ClampedArray(imageData.length);
-        highlightData.set(imageData);
+    removeHorizontalPath(imageBuffer: Uint8ClampedArray, m: number[][], path: number[]) {
+        let newData = new Uint8ClampedArray(imageBuffer.length - path.length * 4);
+        newData.set(imageBuffer.subarray(0, imageBuffer.length - path.length * 4));
+        let highlightData = new Uint8ClampedArray(imageBuffer.length);
+        highlightData.set(imageBuffer);
 
         let bufferWidth = m[0].length * 4;
         let newHeight = m.length - 1;
@@ -184,10 +171,10 @@ export default class Carver {
             for (let r = path[i]; r < newHeight; ++r) {
                 m[r][i] = m[r + 1][i];
 
-                newData[r * bufferWidth + i * 4] = imageData[r * bufferWidth + i * 4 + bufferWidth];
-                newData[r * bufferWidth + i * 4 + 1] = imageData[r * bufferWidth + i * 4 + bufferWidth + 1];
-                newData[r * bufferWidth + i * 4 + 2] = imageData[r * bufferWidth + i * 4 + bufferWidth + 2];
-                newData[r * bufferWidth + i * 4 + 3] = imageData[r * bufferWidth + i * 4 + bufferWidth + 3];
+                newData[r * bufferWidth + i * 4] = imageBuffer[r * bufferWidth + i * 4 + bufferWidth];
+                newData[r * bufferWidth + i * 4 + 1] = imageBuffer[r * bufferWidth + i * 4 + bufferWidth + 1];
+                newData[r * bufferWidth + i * 4 + 2] = imageBuffer[r * bufferWidth + i * 4 + bufferWidth + 2];
+                newData[r * bufferWidth + i * 4 + 3] = imageBuffer[r * bufferWidth + i * 4 + bufferWidth + 3];
             }
 
             highlightData[path[i] * bufferWidth + i * 4] = 255;
@@ -199,11 +186,11 @@ export default class Carver {
         return [newData, highlightData];
     }
 
-    copyMatrix(m) {
+    copyMatrix(m: number[][]) {
         return m.map((r) => [...r]);
     }
 
-    create2DMatrix(h, w) {
+    create2DMatrix(h: number, w: number) {
         return [...Array(h)].map((r) => Array(w));
     }
 }

@@ -15,27 +15,41 @@
     </el-container>
 </template>
 
-<script setup>
-import { computed, ref, onMounted } from 'vue';
-import Carver from '@/carver/carver';
-import SizeInput from './SizeInput.vue';
+<script setup lang="ts">
 
-let canvas;
-let ctx;
-let carver;
+
+import SizeInput from './SizeInput.vue';
+import { computed, ref, onMounted } from 'vue';
+import Carver from '../carver/carver';
+
+let canvas: HTMLCanvasElement;
+let ctx: CanvasRenderingContext2D;
+let carver: Carver;
 let url = ref('');
 
 let width = ref(0);
 let height = ref(0);
 
 onMounted(() => {
-    canvas = document.querySelector('.img-canvas');
-    ctx = canvas.getContext('2d');
+    canvas = document.querySelector('.img-canvas') as HTMLCanvasElement;
+    ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     loadNew('/src/assets/images/chameleon.png');
 });
 
-const loadNew = (url) => {
-    let img = new Image();
+const something = async (px = 100, vertical = true) => {
+    for (let i = 0; i < px; ++i) {
+        const [imageData, hightlightData] = await carver.carve(vertical);
+        ctx.putImageData(hightlightData, 0, 0);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        canvas.width = imageData.width;
+        canvas.height = imageData.height;
+        ctx.putImageData(imageData, 0, 0);
+    }
+};
+
+
+const loadNew = (url: string) => {
+    const img = new Image();
     img.src = url;
     img.crossOrigin = 'Anonymous';
     img.onload = () => {
@@ -47,26 +61,18 @@ const loadNew = (url) => {
         img.style.display = 'none';
         carver = new Carver(ctx.getImageData(0, 0, canvas.width, canvas.height), canvas.width, canvas.height);
     };
-};
+}
 
-const something = async (px = 100, vertical = true) => {
-    for (let i = 0; i < px; ++i) {
-        const [imageData, hightlightData] = await carver.carve(vertical);
-        ctx.putImageData(hightlightData, 0, 0);
-        await new Promise(resolve => setTimeout(resolve, 0));
-        canvas.width = imageData.width;
-        canvas.height = imageData.height;
-        ctx.putImageData(imageData, 0, 0);
-    }
-};
-
-const onSizeSubmit = async ({ inputHeight, inputWidth }) => {
+const onSizeSubmit = async ({ inputHeight, inputWidth }: { inputHeight: number; inputWidth: number }) => {
     console.log('size just changed', inputHeight, inputWidth);
     await something(width.value - inputWidth, true);
     await something(height.value - inputHeight, false);
     width.value = canvas.width;
     height.value = canvas.height;
-}
+};
+
+
+
 </script>
 
 <style scoped></style>

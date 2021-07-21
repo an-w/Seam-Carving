@@ -21,8 +21,8 @@
     </el-form>
 </template>
 
-<script setup>
-import { computed, ref, onMounted, defineProps, toRefs, watch, defineEmits } from 'vue';
+<script setup lang="ts">
+import { computed, ref, onMounted, defineProps, toRefs, watch, defineEmits, unref } from 'vue';
 
 const props = defineProps({ height: Number, width: Number });
 const emit = defineEmits(['submit']);
@@ -39,18 +39,19 @@ let unitText = computed(() => (pixels.value ? 'px' : '%'));
 watch([height, width], (values) => {
     // console.log("changed", values[0], values[1])
     pixels.value = true;
-    sizeForm.value.height = values[0];
-    sizeForm.value.width = values[1];
-}), { immediate: true };
+    sizeForm.value.height = unref(values[0])!;
+    sizeForm.value.width = unref(values[1])!;
+}),
+    { immediate: true };
 
 const updateFormUnits = () => {
-    sizeForm.value = pixels.value ? { height: height.value, width: width.value } : { height: 100, width: 100 };
+    sizeForm.value = pixels.value ? { height: unref(height)!, width: unref(width)! } : { height: 100, width: 100 };
 };
 
 const submit = () => {
-    let h = Math.floor(pixels.value ? sizeForm.value.height : (sizeForm.value.height / 100) * height.value);
-    let w = Math.floor(pixels.value ? sizeForm.value.width : (sizeForm.value.width / 100) * width.value);
-    emit('submit', { inputHeight: h, inputWidth: w })
+    let h = Math.floor(pixels.value ? sizeForm.value.height : (sizeForm.value.height / 100) * unref(height)!);
+    let w = Math.floor(pixels.value ? sizeForm.value.width : (sizeForm.value.width / 100) * unref(width)!);
+    emit('submit', { inputHeight: h, inputWidth: w });
 };
 </script>
 
