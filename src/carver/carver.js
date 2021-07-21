@@ -6,22 +6,33 @@ export default class Carver {
         this.gsMatrix = this.sobel(this.toGsMatrix(imageData.data, imageData.width));
     }
 
-    carveHorizontal() {
-        let path = this.findHorizontalPath(this.gsMatrix);
-        let [newData, highlightData] = this.removeHorizontalPath(this.imageData.data, this.gsMatrix, path);
+    // carveHorizontal() {
+    //     let path = this.findHorizontalPath(this.gsMatrix);
+    //     let [newData, highlightData] = this.removeHorizontalPath(this.imageData.data, this.gsMatrix, path);
+    //     let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
+    //     this.imageData = new ImageData(newData, this.imageData.width, this.imageData.height - 1);
+
+    //     return Promise.resolve([this.imageData, highlightImage]);
+    // }
+
+    // carveVertical() {
+    //     let path = this.findVerticalPath(this.gsMatrix);
+    //     let [newData, highlightData] = this.removeVerticalPath(this.imageData.data, this.gsMatrix, path);
+    //     let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
+    //     this.imageData = new ImageData(newData, this.imageData.width - 1, this.imageData.height);
+
+    //     return Promise.resolve([this.imageData, highlightImage]);
+    // }
+
+    carve(vertical = true) {
+        let path = vertical ? this.findVerticalPath(this.gsMatrix) : this.findHorizontalPath(this.gsMatrix);
+        let [newData, highlightData] = vertical
+            ? this.removeVerticalPath(this.imageData.data, this.gsMatrix, path)
+            : this.removeHorizontalPath(this.imageData.data, this.gsMatrix, path);
         let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
-        this.imageData = new ImageData(newData, this.imageData.width, this.imageData.height - 1);
+        this.imageData = new ImageData(newData, this.imageData.width - vertical, this.imageData.height - !vertical);
 
-        return [this.imageData, highlightImage];
-    }
-
-    carveVertical() {
-        let path = this.findVerticalPath(this.gsMatrix);
-        let [newData, highlightData] = this.removeVerticalPath(this.imageData.data, this.gsMatrix, path);
-        let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
-        this.imageData = new ImageData(newData, this.imageData.width - 1, this.imageData.height);
-
-        return [this.imageData, highlightImage];
+        return Promise.resolve([this.imageData, highlightImage]);
     }
 
     sobel(matrix) {
