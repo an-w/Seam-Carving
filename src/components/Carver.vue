@@ -14,6 +14,7 @@
 import SizeInput from './SizeInput.vue';
 import { computed, ref, onMounted } from 'vue';
 import Carver from '../carver/carver';
+import defaultImg from '/src/assets/images/chameleon.png';
 
 let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
@@ -28,7 +29,7 @@ let fileList = ref([]);
 onMounted(() => {
     canvas = document.querySelector('.img-canvas') as HTMLCanvasElement;
     ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-    loadNew('/src/assets/images/chameleon.png');
+    loadNew(defaultImg);
 });
 
 const onFileChange = (event: Event) => {
