@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -9,4 +11,9 @@ input[type='number']::-webkit-inner-spin-button {
 }
 input[type='number'] {
     -moz-appearance: textfield;
+}
+
+* {
+    font-family: "Roboto Mono", monospace;
+    /* font-family: "Roboto Mono", Avenir, Helvetica, Arial, sans-serif; */
 }

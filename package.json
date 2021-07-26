@@ -6,7 +6,8 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.0.5"
+    "vue": "^3.0.5",
+    "vue-upload-component": "^3.0.50"
   },
   "devDependencies": {
     "@types/node": "^16.4.0",
