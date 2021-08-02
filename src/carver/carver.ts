@@ -2,24 +2,37 @@ export default class Carver {
     imageData: ImageData;
     width: number;
     height: number;
-    gsMatrix: number[][];
+    energyMap: number[][];
 
     constructor(imageData: ImageData, width: number, height: number) {
         this.imageData = imageData;
         this.width = width;
         this.height = height;
-        this.gsMatrix = this.sobel(this.toGsMatrix(imageData.data, imageData.width));
+        this.energyMap = this.sobel(this.toGsMatrix(imageData.data, imageData.width));
     }
 
-    carve(vertical: boolean = true) {
-        let path = vertical ? this.findVerticalPath(this.gsMatrix) : this.findHorizontalPath(this.gsMatrix);
+    seams: number[][] = [];
+
+
+
+    async insert(vertical: boolean = true) {
+        // console.log("vertical", vertical)
+        let path = this.seams.shift()!;
+        let [newData, highlightData] = vertical ? this.insertVerticalPath(this.imageData.data, this.energyMap, path) : this.insertHorizontalPath(this.imageData.data, this.energyMap, path);
+        let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
+        this.imageData = new ImageData(newData, this.imageData.width + +vertical, this.imageData.height + +!vertical);
+        return [this.imageData, highlightImage];
+    }
+
+    async carve(vertical: boolean = true) {
+        let path = vertical ? this.findVerticalPath(this.energyMap) : this.findHorizontalPath(this.energyMap);
         let [newData, highlightData] = vertical
-            ? this.removeVerticalPath(this.imageData.data, this.gsMatrix, path)
-            : this.removeHorizontalPath(this.imageData.data, this.gsMatrix, path);
+            ? this.removeVerticalPath(this.imageData.data, this.energyMap, path)
+            : this.removeHorizontalPath(this.imageData.data, this.energyMap, path);
         let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
         this.imageData = new ImageData(newData, this.imageData.width - +vertical, this.imageData.height - +!vertical);
 
-        return Promise.resolve([this.imageData, highlightImage]);
+        return [this.imageData, highlightImage];
     }
 
     sobel(matrix: number[][]) {
@@ -133,6 +146,46 @@ export default class Carver {
         return result;
     }
 
+
+    async initVerticalInsertion(n: number) {
+        let newMap = this.copyMatrix(this.energyMap);
+        let idxMap = [...Array(newMap.length)].map((r) => [...Array(newMap[0].length + n)].map((_, i) => i));
+        for (let i = 0; i < n; ++i) {
+            let path = this.findVerticalPath(newMap);
+            this.seams.push(path.map((c, idx) => idxMap[idx][c]));
+            for (let i = 0; i < path.length; ++i) {
+                newMap[i].splice(path[i], 1);
+                idxMap[i].splice(path[i], 2);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+    }
+
+    async initHorizontalInsertion(n: number) {
+        let newMap = this.copyMatrix(this.energyMap);
+        let idxMap = [...Array(newMap.length + 2 * n)].map((r, i) => [...Array(newMap[0].length)].map(() => i));
+        for (let i = 0; i < n; ++i) {
+            let path = this.findHorizontalPath(newMap);
+            this.seams.push(path.map((r, idx) => idxMap[r][idx]));
+            for (let c = 0; c < path.length; ++c) {
+                for (let r = path[c]; r < newMap.length - 1; ++r) {
+                    newMap[r][c] = newMap[r + 1][c];
+                }
+                for (let r = path[c]; r < idxMap.length - 2; ++r) {
+                    idxMap[r][c] = idxMap[r + 2][c];
+                }
+            }
+            newMap.pop();
+            idxMap.pop();
+            idxMap.pop();
+            // console.log("fff", newMap.length)
+            if (i == n - 1) {
+                console.log("ddd", idxMap)
+            }
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+    }
+
     removeVerticalPath(imageBuffer: Uint8ClampedArray, m: number[][], path: number[]) {
         let newData = new Uint8ClampedArray(imageBuffer.length - path.length * 4);
         let highlightData = new Uint8ClampedArray(imageBuffer.length);
@@ -156,6 +209,68 @@ export default class Carver {
             highlightData[p + 2] = 0;
             highlightData[p + 3] = 255;
         }
+        return [newData, highlightData];
+    }
+
+    insertVerticalPath(imageBuffer: Uint8ClampedArray, m: number[][], path: number[]) {
+        let newData = new Uint8ClampedArray(imageBuffer.length + path.length * 4);
+        let highlightData = new Uint8ClampedArray(imageBuffer.length);
+        highlightData.set(imageBuffer);
+        let bufferWidth = m[0].length * 4;
+        let newBufferWidth = bufferWidth + 4;
+        for (let i = 0; i < path.length; ++i) {
+            // splice energy matrix
+            m[i].splice(path[i], 0, path[i]);
+
+            // copy image buffer
+            let before = imageBuffer.slice(i * bufferWidth, i * bufferWidth + path[i] * 4);
+            let after = imageBuffer.slice(i * bufferWidth + path[i] * 4 - 4, (i + 1) * bufferWidth + 4);
+            newData.set(before, i * newBufferWidth);
+            newData.set(after, i * newBufferWidth + path[i] * 4);
+
+            // colour red
+            let p = i * bufferWidth + path[i] * 4 + 4;
+            highlightData[p] = 255;
+            highlightData[p + 1] = 0;
+            highlightData[p + 2] = 0;
+            highlightData[p + 3] = 255;
+        }
+        return [newData, highlightData];
+    }
+
+    insertHorizontalPath(imageBuffer: Uint8ClampedArray, m: number[][], path: number[]) {
+        let newData = new Uint8ClampedArray(imageBuffer.length + path.length * 4);
+        newData.set(imageBuffer.subarray(0, imageBuffer.length));
+        let highlightData = new Uint8ClampedArray(imageBuffer.length);
+        highlightData.set(imageBuffer);
+
+        let bufferWidth = m[0].length * 4;
+        let newHeight = m.length + 1;
+        m.push(m[m.length - 1]);
+        for (let i = 0; i < path.length; ++i) {
+            for (let r = newHeight - 1; r > path[i]; --r) {
+                m[r][i] = m[r - 1][i];
+
+                newData[r * bufferWidth + i * 4] = imageBuffer[r * bufferWidth + i * 4 - bufferWidth];
+                newData[r * bufferWidth + i * 4 + 1] = imageBuffer[r * bufferWidth + i * 4 - bufferWidth + 1];
+                newData[r * bufferWidth + i * 4 + 2] = imageBuffer[r * bufferWidth + i * 4 - bufferWidth + 2];
+                newData[r * bufferWidth + i * 4 + 3] = imageBuffer[r * bufferWidth + i * 4 - bufferWidth + 3];
+            }
+            // for (let r = path[i]; r < newHeight - 1; ++r) {
+            //     m[r + 1][i] = m[r][i];
+
+            //     imageBuffer[r * bufferWidth + i * 4 + bufferWidth] = newData[r * bufferWidth + i * 4];
+            //     imageBuffer[r * bufferWidth + i * 4 + bufferWidth + 1] = newData[r * bufferWidth + i * 4 + 1];
+            //     imageBuffer[r * bufferWidth + i * 4 + bufferWidth + 2] = newData[r * bufferWidth + i * 4 + 2];
+            //     imageBuffer[r * bufferWidth + i * 4 + bufferWidth + 3] = newData[r * bufferWidth + i * 4 + 3];
+            // }
+
+            highlightData[path[i] * bufferWidth + i * 4] = 255;
+            highlightData[path[i] * bufferWidth + i * 4 + 1] = 0;
+            highlightData[path[i] * bufferWidth + i * 4 + 2] = 0;
+            highlightData[path[i] * bufferWidth + i * 4 + 3] = 255;
+        }
+
         return [newData, highlightData];
     }
 

@@ -1,5 +1,5 @@
 <template>
-    <div class="h-screen text-center  m-0 p-0">
+    <div class="h-full text-center  m-0 p-0">
         <Carver />
     </div>
 </template>
