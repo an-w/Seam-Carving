@@ -1,9 +1,9 @@
 <template>
-    <div class="h-full" direction="vertical">
-        <div class="text-5xl mb-10 mt-5 font-bold"> Seam Carving </div>
+    <div class="h-full" direction="vertical" >
+        <div class="text-4xl mb-5 mt-5 font-bold"> Seam Carving </div>
         <div class="text-center">
             <div class="flex justify-center">
-                <size-input :height="height" :width="width" @submit="onSizeSubmit"  @change="onFileChange"></size-input>
+                <size-input :height="height" :width="width" @submit="onSizeSubmit"  @change="onFileChange" @save="downloadImage"></size-input>
             </div>
             <canvas class="img-canvas mt-5 mx-auto" style=""></canvas>
             <!-- <div>100 x 100</div> -->
@@ -16,6 +16,7 @@ import SizeInput from './SizeInput.vue';
 import { computed, ref, onMounted } from 'vue';
 import Carver from '../carver/carver';
 import defaultImg from '/src/assets/images/dali.png';
+import FileSaver from 'file-saver';
 
 let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
@@ -33,10 +34,19 @@ onMounted(() => {
     loadNew(defaultImg);
 });
 
+const downloadImage = () => {
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    FileSaver.saveAs(
+        canvas.toDataURL("image/png"),
+        `resized-${imgSrc.value.split(/[/\\]/).pop()}`
+    );
+}
+
 const onFileChange = (event: Event) => {
-    console.log("file changed", event);
+    let file = (event.target as HTMLInputElement).files![0];
+    imgSrc.value = file.name;
     let reader = new FileReader();
-    reader.readAsDataURL((event.target as HTMLInputElement).files![0]);
+    reader.readAsDataURL(file);
     reader.onload = e => {
         if (e.target!.readyState === FileReader.DONE) {
             loadNew(e.target!.result as string);
@@ -76,7 +86,6 @@ const loadNew = (url: string) => {
     img.src = url;
     img.crossOrigin = 'Anonymous';
     img.onload = () => {
-        imgSrc.value = url;
         canvas.width = img.width;
         canvas.height = img.height;
         width.value = img.width;
@@ -88,7 +97,6 @@ const loadNew = (url: string) => {
 };
 
 const onSizeSubmit = async ({ inputHeight, inputWidth }: { inputHeight: number; inputWidth: number }) => {
-    console.log('size just changed', inputHeight, inputWidth);
     if (inputWidth > width.value) {
         await insert(inputWidth - width.value, true);
     } else {
@@ -106,7 +114,8 @@ const onSizeSubmit = async ({ inputHeight, inputWidth }: { inputHeight: number; 
 
 <style scoped>
 .img-canvas {
-    max-height: 60vh;
+    max-height: calc(100vh - 400px);
+    min-height: 600px;
     max-width: 80vw;
 }
 </style>

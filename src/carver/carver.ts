@@ -178,10 +178,6 @@ export default class Carver {
             newMap.pop();
             idxMap.pop();
             idxMap.pop();
-            // console.log("fff", newMap.length)
-            if (i == n - 1) {
-                console.log("ddd", idxMap)
-            }
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
     }
@@ -256,14 +252,6 @@ export default class Carver {
                 newData[r * bufferWidth + i * 4 + 2] = imageBuffer[r * bufferWidth + i * 4 - bufferWidth + 2];
                 newData[r * bufferWidth + i * 4 + 3] = imageBuffer[r * bufferWidth + i * 4 - bufferWidth + 3];
             }
-            // for (let r = path[i]; r < newHeight - 1; ++r) {
-            //     m[r + 1][i] = m[r][i];
-
-            //     imageBuffer[r * bufferWidth + i * 4 + bufferWidth] = newData[r * bufferWidth + i * 4];
-            //     imageBuffer[r * bufferWidth + i * 4 + bufferWidth + 1] = newData[r * bufferWidth + i * 4 + 1];
-            //     imageBuffer[r * bufferWidth + i * 4 + bufferWidth + 2] = newData[r * bufferWidth + i * 4 + 2];
-            //     imageBuffer[r * bufferWidth + i * 4 + bufferWidth + 3] = newData[r * bufferWidth + i * 4 + 3];
-            // }
 
             highlightData[path[i] * bufferWidth + i * 4] = 255;
             highlightData[path[i] * bufferWidth + i * 4 + 1] = 0;
