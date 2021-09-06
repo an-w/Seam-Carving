@@ -4,7 +4,7 @@ Content-Aware Image Resizing
 **Demo**: https://an-w.github.io/seam-carving/
 
 ## Introduction
-Implementation of [Seam Carving for Content-Aware Image Resizing](http://graphics.cs.cmu.edu/courses/15-463/2012_fall/hw/proj3-seamcarving/imret.pdf)  by Avidan and Shamir. This algorithm allows images to be resized without distorion or loss of content from scaling or cropping. This is done by finding the lowest energy vertical or horizontal seam (connected path of pixels) and then carving (removing) it. This process is repeated until the desired height or width is reached. For seam insertion (increasing size), the seam would be duplicated rather than removed.
+JavaScript implementation of [Seam Carving for Content-Aware Image Resizing](http://graphics.cs.cmu.edu/courses/15-463/2012_fall/hw/proj3-seamcarving/imret.pdf)  by Avidan and Shamir. This algorithm allows images to be resized without distorion or loss of content from scaling or cropping. This is done by finding the lowest energy vertical or horizontal seam (connected path of pixels) and then carving (removing) it. This process is repeated until the desired height or width is reached. For seam insertion (increasing size), the seam would be duplicated rather than removed.
 
 
 ## Examples
@@ -16,7 +16,7 @@ A few examples to demonstrate both carving and insertion of vertical and horizon
 
 gif:
 
-<img src="public/balloons.gif" alt="drawing" width="400"/>
+<img src="public/balloons.gif" alt="drawing" width="600"/>
 
 
 ### Insertion

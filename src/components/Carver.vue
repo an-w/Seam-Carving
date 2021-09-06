@@ -14,7 +14,7 @@
 import SizeInput from './SizeInput.vue';
 import { computed, ref, onMounted } from 'vue';
 import Carver from '../carver/carver';
-import defaultImg from '/public/lemons.jpg';
+import defaultImg from '/public/dali.png';
 import FileSaver from 'file-saver';
 
 let canvas: HTMLCanvasElement;
@@ -114,7 +114,6 @@ const onSizeSubmit = async ({ inputHeight, inputWidth }: { inputHeight: number; 
 <style scoped>
 .img-canvas {
     max-height: calc(100vh - 300px);
-    /* min-height: 600px; */
     max-width: 80vw;
 }
 </style>
