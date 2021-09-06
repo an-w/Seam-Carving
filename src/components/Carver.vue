@@ -6,7 +6,6 @@
                 <size-input :height="height" :width="width" @submit="onSizeSubmit"  @change="onFileChange" @save="downloadImage"></size-input>
             </div>
             <canvas class="img-canvas mt-5 mx-auto" style=""></canvas>
-            <!-- <div>100 x 100</div> -->
         </div>
     </div>
 </template>
@@ -15,7 +14,7 @@
 import SizeInput from './SizeInput.vue';
 import { computed, ref, onMounted } from 'vue';
 import Carver from '../carver/carver';
-import defaultImg from '/src/assets/images/dali.png';
+import defaultImg from '/public/lemons.jpg';
 import FileSaver from 'file-saver';
 
 let canvas: HTMLCanvasElement;
@@ -56,9 +55,9 @@ const onFileChange = (event: Event) => {
 
 const insert = async (px = 100, vertical = true) => {
     if (vertical) {
-        carver.initVerticalInsertion(px);
+        await carver.initVerticalInsertion(px);
     } else {
-        carver.initHorizontalInsertion(px);
+        await carver.initHorizontalInsertion(px);
     }
     for (let i = 0; i < px; ++i) {
         const [imageData, hightlightData] = await carver.insert(vertical);
@@ -114,8 +113,8 @@ const onSizeSubmit = async ({ inputHeight, inputWidth }: { inputHeight: number; 
 
 <style scoped>
 .img-canvas {
-    max-height: calc(100vh - 400px);
-    min-height: 600px;
+    max-height: calc(100vh - 300px);
+    /* min-height: 600px; */
     max-width: 80vw;
 }
 </style>

@@ -11,18 +11,8 @@ export default class Carver {
         this.energyMap = this.sobel(this.toGsMatrix(imageData.data, imageData.width));
     }
 
-    seams: number[][] = [];
-
-
-
-    async insert(vertical: boolean = true) {
-        // console.log("vertical", vertical)
-        let path = this.seams.shift()!;
-        let [newData, highlightData] = vertical ? this.insertVerticalPath(this.imageData.data, this.energyMap, path) : this.insertHorizontalPath(this.imageData.data, this.energyMap, path);
-        let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
-        this.imageData = new ImageData(newData, this.imageData.width + +vertical, this.imageData.height + +!vertical);
-        return [this.imageData, highlightImage];
-    }
+    ogSeams: number[][] = [];
+    adjSeams: number[][] = [];
 
     async carve(vertical: boolean = true) {
         let path = vertical ? this.findVerticalPath(this.energyMap) : this.findHorizontalPath(this.energyMap);
@@ -32,6 +22,15 @@ export default class Carver {
         let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
         this.imageData = new ImageData(newData, this.imageData.width - +vertical, this.imageData.height - +!vertical);
 
+        return [this.imageData, highlightImage];
+    }
+
+    async insert(vertical: boolean = true) {
+        let f = this.ogSeams.shift()!;
+        let path = this.adjSeams.shift()!.map((el, idx) => el * 2 - f[idx]);
+        let [newData, highlightData] = vertical ? this.insertVerticalPath(this.imageData.data, this.energyMap, path) : this.insertHorizontalPath(this.imageData.data, this.energyMap, path);
+        let highlightImage = new ImageData(highlightData, this.imageData.width, this.imageData.height);
+        this.imageData = new ImageData(newData, this.imageData.width + +vertical, this.imageData.height + +!vertical);
         return [this.imageData, highlightImage];
     }
 
@@ -152,10 +151,11 @@ export default class Carver {
         let idxMap = [...Array(newMap.length)].map((r) => [...Array(newMap[0].length + n)].map((_, i) => i));
         for (let i = 0; i < n; ++i) {
             let path = this.findVerticalPath(newMap);
-            this.seams.push(path.map((c, idx) => idxMap[idx][c]));
+            this.ogSeams.push(path);
+            this.adjSeams.push(path.map((c, idx) => idxMap[idx][c]));
             for (let i = 0; i < path.length; ++i) {
                 newMap[i].splice(path[i], 1);
-                idxMap[i].splice(path[i], 2);
+                idxMap[i].splice(path[i], 1);
             }
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
@@ -166,13 +166,14 @@ export default class Carver {
         let idxMap = [...Array(newMap.length + 2 * n)].map((r, i) => [...Array(newMap[0].length)].map(() => i));
         for (let i = 0; i < n; ++i) {
             let path = this.findHorizontalPath(newMap);
-            this.seams.push(path.map((r, idx) => idxMap[r][idx]));
+            this.ogSeams.push(path);
+            this.adjSeams.push(path.map((r, idx) => idxMap[r][idx]));
             for (let c = 0; c < path.length; ++c) {
                 for (let r = path[c]; r < newMap.length - 1; ++r) {
                     newMap[r][c] = newMap[r + 1][c];
                 }
-                for (let r = path[c]; r < idxMap.length - 2; ++r) {
-                    idxMap[r][c] = idxMap[r + 2][c];
+                for (let r = path[c]; r < idxMap.length - 1; ++r) {
+                    idxMap[r][c] = idxMap[r + 1][c];
                 }
             }
             newMap.pop();
